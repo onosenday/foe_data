@@ -1,8 +1,23 @@
-import { GA_CONFIG } from './config.js';
-
 // Google Analytics 4 Credentials
-const GA_MEASUREMENT_ID = GA_CONFIG.MEASUREMENT_ID;
-const GA_API_SECRET = GA_CONFIG.API_SECRET;
+let GA_MEASUREMENT_ID = '';
+let GA_API_SECRET = '';
+
+try {
+    // Try to load real config (gitignored)
+    const config = await import('./config.js');
+    GA_MEASUREMENT_ID = config.GA_CONFIG.MEASUREMENT_ID;
+    GA_API_SECRET = config.GA_CONFIG.API_SECRET;
+} catch (e) {
+    // Fallback to example/placeholder if config.js is missing (e.g. fresh clone or zip without keys)
+    console.warn('[Analytics] config.js not found. Using placeholders.');
+    try {
+        const example = await import('./config.example.js');
+        GA_MEASUREMENT_ID = example.GA_CONFIG.MEASUREMENT_ID;
+        GA_API_SECRET = example.GA_CONFIG.API_SECRET;
+    } catch (e2) {
+        console.error('[Analytics] No config file found.');
+    }
+}
 
 const GA_ENDPOINT = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=${GA_API_SECRET}`;
 
