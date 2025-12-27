@@ -109,13 +109,101 @@
         .footer a:hover {
             text-decoration: underline;
         }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ffd700;
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            margin-top: 15px;
+            color: #ffd700;
+            font-size: 14px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: #333;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: #4a6b10;
+            border-left: 4px solid #8eff2d;
+        }
+
+        .toast.error {
+            background: #8b0000;
+            border-left: 4px solid #ff4444;
+        }
+
+        .toast.info {
+            background: #2d5a6b;
+            border-left: 4px solid #00d4ff;
+        }
     </style>
 </head>
 
 <body>
-    <h1><img src="images/icon48.png" alt="ForgeData" style="height: 24px; vertical-align: middle;"> ForgeData</h1>
+    <h1><img id="logo" src="images/icon48.png" alt="ForgeData"
+            style="height: 24px; vertical-align: middle; cursor: pointer;"> ForgeData</h1>
     <div class="btn-group">
-        <button id="btnJson" class="btn-json">
+        <button id="btnJson" class="btn-json" style="display: none;">
             <span class="icon">📄</span>
             <span>Exportar JSON<br><span class="desc">MainParser + buildingData</span></span>
         </button>
@@ -132,9 +220,41 @@
         Requiere FoE Helper activo<br>
         Por <strong>onosenday</strong> · <a href="mailto:onosenday@gmail.com">onosenday@gmail.com</a>
     </div>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Procesando...</div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
     <script src="lib/xlsx.mini.min.js"></script>
     <script src="lib/exceljs.min.js"></script>
     <script src="lib/icons_base64.js"></script>
+    <script>
+        // Mostrar botón JSON secreto estilo Android (7 clicks rápidos en el logo)
+        let clickCount = 0;
+        let lastClickTime = 0;
+        const logo = document.getElementById('logo');
+
+        logo.addEventListener('click', () => {
+            const currentTime = new Date().getTime();
+
+            // Resetear si pasan más de 1 segundo entre clicks
+            if (currentTime - lastClickTime > 1000) {
+                clickCount = 0;
+            }
+
+            lastClickTime = currentTime;
+            clickCount++;
+
+            if (clickCount >= 7) {
+                document.getElementById('btnJson').style.display = 'flex';
+                // Opcional: Feedback visual de que se activó
+                logo.style.transform = 'rotate(360deg)';
+                logo.style.transition = 'transform 0.5s';
+            }
+        });
+    </script>
     <script src="src/popup.js"></script>
 </body>
 
