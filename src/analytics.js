@@ -1,25 +1,7 @@
 // Google Analytics 4 Credentials
 let GA_MEASUREMENT_ID = '';
 let GA_API_SECRET = '';
-
-try {
-    // Try to load real config (gitignored)
-    const config = await import('./config.js');
-    GA_MEASUREMENT_ID = config.GA_CONFIG.MEASUREMENT_ID;
-    GA_API_SECRET = config.GA_CONFIG.API_SECRET;
-} catch (e) {
-    // Fallback to example/placeholder if config.js is missing (e.g. fresh clone or zip without keys)
-    console.warn('[Analytics] config.js not found. Using placeholders.');
-    try {
-        const example = await import('./config.example.js');
-        GA_MEASUREMENT_ID = example.GA_CONFIG.MEASUREMENT_ID;
-        GA_API_SECRET = example.GA_CONFIG.API_SECRET;
-    } catch (e2) {
-        console.error('[Analytics] No config file found.');
-    }
-}
-
-const GA_ENDPOINT = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=${GA_API_SECRET}`;
+let GA_ENDPOINT = '';
 
 // Debug mode (prints events to console instead of sending)
 const DEBUG = false;
@@ -28,14 +10,37 @@ class Analytics {
     constructor() {
         this.clientId = null;
         this.enabled = true; // Default to true, strictly controlled by user setting
+        this.initialized = false;
     }
 
     /**
      * Initialize the analytics service.
-     * Loads client ID and privacy preference.
+     * Loads config, client ID and privacy preference.
      */
     async init() {
-        // Load Client ID
+        if (this.initialized) return;
+
+        // 1. Load Configuration (Dynamic Import)
+        try {
+            // Try to load real config (gitignored)
+            const config = await import('./config.js');
+            GA_MEASUREMENT_ID = config.GA_CONFIG.MEASUREMENT_ID;
+            GA_API_SECRET = config.GA_CONFIG.API_SECRET;
+        } catch (e) {
+            // Fallback to example/placeholder (e.g. zip installation)
+            if (DEBUG) console.warn('[Analytics] config.js not found. Using placeholders.');
+            try {
+                const example = await import('./config.example.js');
+                GA_MEASUREMENT_ID = example.GA_CONFIG.MEASUREMENT_ID;
+                GA_API_SECRET = example.GA_CONFIG.API_SECRET;
+            } catch (e2) {
+                console.error('[Analytics] No config file found.');
+            }
+        }
+
+        GA_ENDPOINT = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=${GA_API_SECRET}`;
+
+        // 2. Load Client ID
         const stored = await chrome.storage.local.get(['analytics_client_id', 'analytics_enabled']);
 
         if (stored.analytics_client_id) {
@@ -45,8 +50,10 @@ class Analytics {
             await chrome.storage.local.set({ analytics_client_id: this.clientId });
         }
 
-        // Load Privacy Setting (default to true if undefined)
+        // 3. Load Privacy Setting (default to true if undefined)
         this.enabled = stored.analytics_enabled !== false;
+
+        this.initialized = true;
     }
 
     /**
@@ -67,7 +74,13 @@ class Analytics {
         if (!this.enabled) return;
 
         // Ensure init complete
-        if (!this.clientId) await this.init();
+        if (!this.initialized) await this.init();
+
+        // If no credentials, abort (unless debugging)
+        if (!GA_MEASUREMENT_ID || GA_MEASUREMENT_ID.includes('YOUR_')) {
+            if (DEBUG) console.warn('[Analytics] Credentials missing/invalid. Request not sent.');
+            return;
+        }
 
         const payload = {
             client_id: this.clientId,
@@ -82,10 +95,6 @@ class Analytics {
 
         if (DEBUG) {
             console.log('[Analytics] Tracking:', eventName, payload);
-            if (GA_MEASUREMENT_ID === 'YOUR_MEASUREMENT_ID') {
-                console.warn('[Analytics] Credentials missing. Request not sent.');
-                return;
-            }
         }
 
         try {

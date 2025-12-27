@@ -325,8 +325,8 @@ async function exportData(type) {
                         return { type: 'error', message: 'Datos no encontrados. Asegúrate de estar en tu ciudad.' };
                     }
 
-                    console.log('CityMapData:', Object.keys(cityMapData).length, 'edificios');
-                    console.log('CityEntities:', Object.keys(buildingData).length, 'en catálogo');
+                    // console.log('CityMapData:', Object.keys(cityMapData).length, 'edificios');
+                    // console.log('CityEntities:', Object.keys(buildingData).length, 'en catálogo');
 
                     const colNames = {
                         'name': 'Nombre', 'eraName': 'Era', 'count': 'Cantidad',
@@ -351,7 +351,7 @@ async function exportData(type) {
 
                     // Obtener la era del ayuntamiento
                     const townHallEra = getTownHallEra(cityMapData);
-                    console.log('Era del ayuntamiento:', townHallEra);
+                    // console.log('Era del ayuntamiento:', townHallEra);
 
                     // Procesar edificios
                     const buildings = [];
@@ -458,7 +458,7 @@ async function exportData(type) {
                         return { type: 'error', message: 'CityEntities no encontrado.' };
                     }
 
-                    console.log('CityEntities para catálogo:', Object.keys(catalog).length, 'edificios');
+                    // console.log('CityEntities para catálogo:', Object.keys(catalog).length, 'edificios');
 
                     // Lista de eras del juego (en orden)
                     const eraList = [
@@ -834,7 +834,7 @@ async function generateExcelWithIcons(sheets, filename) {
                     worksheet.getCell(1, colIdx + 1).value = '';
                     worksheet.getColumn(colIdx + 1).width = 6;
                 } catch (e) {
-                    console.log('Error añadiendo icono:', iconKey, e);
+                    // console.log('Error añadiendo icono:', iconKey, e);
                 }
             }
         }
