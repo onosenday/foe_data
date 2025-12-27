@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mapa de Ciudad - ForgeData</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #222;
+            color: #eee;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        #sidebar {
+            width: 300px;
+            background: #333;
+            padding: 15px;
+            overflow-y: auto;
+            border-right: 1px solid #444;
+        }
+
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #toolbar {
+            padding: 10px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #444;
+            display: flex;
+            gap: 10px;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            background: #1a1a1a;
+            cursor: grab;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        .stat-box {
+            background: #444;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        button {
+            background: #4a90a4;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #5aa0b4;
+        }
+
+        #loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            flex-direction: column;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sidebar">
+        <h2>ForgeData Map</h2>
+        <div id="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="stat-buildings">0</div>
+                <div class="stat-label">Edificios</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="stat-expansion">0</div>
+                <div class="stat-label">Expansiones</div>
+            </div>
+        </div>
+        <div id="building-list"></div>
+    </div>
+
+    <div id="main">
+        <div id="toolbar">
+            <button id="btnZoomIn">Zoom +</button>
+            <button id="btnZoomOut">Zoom -</button>
+            <button id="btnCenter">Centrar</button>
+            <span id="coords" style="margin-left: auto; align-self: center; color: #888;">0, 0</span>
+        </div>
+        <div id="canvas-container">
+            <canvas id="mapCanvas"></canvas>
+        </div>
+        <div id="loading">
+            <div class="spinner"></div>
+            <div id="loading-text">Conectando con el juego...</div>
+        </div>
+    </div>
+
+    <script src="map_viewer.js"></script>
+</body>
+
+</html>

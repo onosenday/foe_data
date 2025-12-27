@@ -1,10 +1,9 @@
 /*
  * Standalone FoE Proxy & MainParser Re-implementation
- * Based on FoE Helper Extension
  */
 
-if (typeof globalThis.FoEproxy == 'undefined') {
-    globalThis.FoEproxy = (function () {
+if (typeof globalThis.FoEDataProxy == 'undefined') {
+    globalThis.FoEDataProxy = (function () {
         const requestInfoHolder = new WeakMap();
         function getRequestData(xhr) {
             let data = requestInfoHolder.get(xhr);
@@ -43,7 +42,7 @@ if (typeof globalThis.FoEproxy == 'undefined') {
                 return;
             }
 
-            console.log("FoE Interceptor: XHR Load", this.responseURL || "unknown URL");
+            // console.log("FoE Interceptor: XHR Load", this.responseURL || "unknown URL");
             if (xhrQueue) {
                 xhrQueue.push(this);
                 return;
@@ -57,7 +56,7 @@ if (typeof globalThis.FoEproxy == 'undefined') {
             const postData = requestData.postData;
 
             // handle raw request handlers
-            for (let callback of FoEproxy._getProxyRaw()) {
+            for (let callback of FoEDataProxy._getProxyRaw()) {
                 try {
                     callback(this, requestData);
                 } catch (e) {
@@ -76,13 +75,13 @@ if (typeof globalThis.FoEproxy == 'undefined') {
 
                 // console.log(`FoE Interceptor: Metadata detected. Type: '${meta}'`);
 
-                if (window.MainParser && window.MainParser.MetaIds) {
-                    window.MainParser.MetaIds[meta] = metaArray[1];
+                if (window.FoEDataParser && window.FoEDataParser.MetaIds) {
+                    window.FoEDataParser.MetaIds[meta] = metaArray[1];
                 } else {
                     // console.error("FoE Interceptor: MainParser or MetaIds missing!");
                 }
 
-                const metaHandler = FoEproxy._getMetaMap()[meta];
+                const metaHandler = FoEDataProxy._getMetaMap()[meta];
 
                 if (metaHandler) {
                     // console.log(`FoE Interceptor: Handler found for '${meta}'. executing...`);
@@ -114,8 +113,8 @@ if (typeof globalThis.FoEproxy == 'undefined') {
                         requestData = JSON.parse(new TextDecoder().decode(postData));
 
                         const handleEntry = (entry) => {
-                            FoEproxy._addToHistory(entry.requestClass + '.' + entry.requestMethod);
-                            FoEproxy._proxyAction(entry.requestClass, entry.requestMethod, entry, requestData);
+                            FoEDataProxy._addToHistory(entry.requestClass + '.' + entry.requestMethod);
+                            FoEDataProxy._proxyAction(entry.requestClass, entry.requestMethod, entry, requestData);
                         };
 
                         // Debug log for checking parsed entries
@@ -147,7 +146,7 @@ if (typeof globalThis.FoEproxy == 'undefined') {
                     }
                 } catch (e) {
                     // Response text parsing error
-                    console.error("FoE Interceptor: Error parsing responseText for game/json", e);
+                    // console.error("FoE Interceptor: Error parsing responseText for game/json", e);
                 }
             }
         }
@@ -170,7 +169,7 @@ if (typeof globalThis.FoEproxy == 'undefined') {
                 if (posts instanceof Array) {
                     for (let post of posts) {
                         if (post && post.requestClass && post.requestMethod) {
-                            FoEproxy._proxyRequestAction(post.requestClass, post.requestMethod, post);
+                            FoEDataProxy._proxyRequestAction(post.requestClass, post.requestMethod, post);
                         }
                     }
                 }
@@ -199,7 +198,7 @@ if (typeof globalThis.FoEproxy == 'undefined') {
     })();
 
     // Extended FoEproxy API
-    Object.assign(globalThis.FoEproxy, (function () {
+    Object.assign(globalThis.FoEDataProxy, (function () {
         const proxyMap = {};
         const proxyRequestsMap = {};
         const proxyMetaMap = {};
@@ -269,7 +268,7 @@ if (typeof globalThis.FoEproxy == 'undefined') {
         WebSocket.prototype.send = function (data) {
             oldWSSend.call(this, data);
             // Check proxy enabled using the API from Part 1
-            if (globalThis.FoEproxy._getProxyEnabled && globalThis.FoEproxy._getProxyEnabled() && !observedWebsockets.has(this)) {
+            if (globalThis.FoEDataProxy._getProxyEnabled && globalThis.FoEDataProxy._getProxyEnabled() && !observedWebsockets.has(this)) {
                 observedWebsockets.add(this);
                 this.addEventListener('message', wsMessageHandler, { capture: false, passive: true });
             }
@@ -356,7 +355,7 @@ if (typeof globalThis.FoEproxy == 'undefined') {
 // MAIN PARSER RECONSTRUCTION
 // ==========================================
 
-window.MainParser = {
+window.FoEDataParser = {
     CityMapData: {},
     CityEntities: {},
     BuildingUpgrades: {},
@@ -392,36 +391,37 @@ window.MainParser = {
 
 // 1. Startup Data
 const handleStartup = (data, postData) => {
-    console.log("FoE Interceptor: StartupService captured!", data);
+    // console.log("FoE Interceptor: StartupService captured!", data);
 
     // CityMap
     if (data.responseData.city_map && data.responseData.city_map.entities) {
-        window.MainParser.CityMapData = Object.assign({}, ...data.responseData.city_map.entities.map((x) => ({ [x.id]: x })));
-        console.log("FoE Interceptor: CityMapData populated with " + Object.keys(window.MainParser.CityMapData).length + " entities.");
+        window.FoEDataParser.CityMapData = Object.assign({}, ...data.responseData.city_map.entities.map((x) => ({ [x.id]: x })));
+        // console.log("FoE Interceptor: CityMapData populated with " + Object.keys(window.FoEDataParser.CityMapData).length + " entities.");
     }
 };
 
-FoEproxy.addHandler('StartupService', 'getData', handleStartup);
-FoEproxy.addWsHandler('StartupService', 'getData', handleStartup);
+FoEDataProxy.addHandler('StartupService', 'getData', handleStartup);
+FoEDataProxy.addWsHandler('StartupService', 'getData', handleStartup);
 
 
 // 2. City Entities (Metadata)
-FoEproxy.addMetaHandler('city_entities', (xhr, postData) => {
+FoEDataProxy.addMetaHandler('city_entities', (xhr, postData) => {
     let EntityArray = JSON.parse(xhr.responseText);
-    window.MainParser.CityEntities = Object.assign({}, ...EntityArray.map((x) => ({ [x.id]: x })));
-    console.log("FoE Standalone: CityEntities populated with " + Object.keys(window.MainParser.CityEntities).length + " definitions.");
+    window.FoEDataParser.CityEntities = Object.assign({}, ...EntityArray.map((x) => ({ [x.id]: x })));
+    // console.log("FoE Standalone: CityEntities populated with " + Object.keys(window.FoEDataParser.CityEntities).length + " definitions.");
 });
 
 // 3. City Map Service (Updates)
 const handleCityMap = (data, postData) => {
     if (data.responseData && Array.isArray(data.responseData)) {
-        window.MainParser.CityMapData = Object.assign({}, ...data.responseData.map((x) => ({ [x.id]: x })));
-        console.log("FoE Standalone: CityMapData updated.");
+        window.FoEDataParser.CityMapData = Object.assign({}, ...data.responseData.map((x) => ({ [x.id]: x })));
+        // console.log("FoE Standalone: CityMapData updated.");
     }
 };
 
-FoEproxy.addHandler('CityMapService', 'getEntities', handleCityMap);
-FoEproxy.addWsHandler('CityMapService', 'getEntities', handleCityMap); // Just in case
-FoEproxy.addWsHandler('CityMapService', 'updateEntity', handleCityMap); // Often used in WS
+FoEDataProxy.addHandler('CityMapService', 'getEntities', handleCityMap);
+FoEDataProxy.addWsHandler('CityMapService', 'getEntities', handleCityMap); // Just in case
+FoEDataProxy.addWsHandler('CityMapService', 'updateEntity', handleCityMap); // Often used in WS
 
-console.log("FoE Data Export: Independent Interceptor Initialized (Restored with WS Support)");
+const sid = Math.random().toString(36).substring(2, 9);
+console.log(`FoeData v1.2.1 started. ID: ${sid}`);

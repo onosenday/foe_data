@@ -160,7 +160,7 @@ async function exportData(type) {
             args: [type],
             func: (exportType) => {
                 if (!window.location.href.includes('forgeofempires.com/game')) return null;
-                if (typeof MainParser === 'undefined') return null;
+                if (typeof FoEDataParser === 'undefined') return null;
 
                 // ============================================
                 // UTILIDADES
@@ -306,7 +306,7 @@ async function exportData(type) {
 
                 if (exportType === 'json') {
                     const data = safeClone({
-                        MainParser: MainParser,
+                        MainParser: FoEDataParser,
                         buildingData: window.buildingData || null,
                         exportDate: new Date().toISOString()
                     });
@@ -318,8 +318,8 @@ async function exportData(type) {
                 // ============================================
 
                 if (exportType === 'efficiency') {
-                    const buildingData = MainParser.CityEntities;
-                    const cityMapData = MainParser.CityMapData;
+                    const buildingData = FoEDataParser.CityEntities;
+                    const cityMapData = FoEDataParser.CityMapData;
 
                     if (!cityMapData || !buildingData) {
                         return { type: 'error', message: 'Datos no encontrados. Asegúrate de estar en tu ciudad.' };
@@ -452,7 +452,7 @@ async function exportData(type) {
                 // ============================================
 
                 if (exportType === 'catalog') {
-                    const catalog = MainParser.CityEntities;
+                    const catalog = FoEDataParser.CityEntities;
 
                     if (!catalog) {
                         return { type: 'error', message: 'CityEntities no encontrado.' };
